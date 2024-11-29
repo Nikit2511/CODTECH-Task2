@@ -1,0 +1,75 @@
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+
+# Step 1: Load and Prepare Data
+def load_and_split_data(filepath):
+    """Loads data and splits it into training and testing sets."""
+    import pandas as pd
+    data = pd.read_csv(filepath)
+    
+    # Assuming the last column is the target
+    X = data.iloc[:, :-1]
+    y = data.iloc[:, -1]
+    
+    return train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Step 2: Define Models
+def define_models():
+    """Defines a list of AI models for evaluation."""
+    models = {
+        "Random Forest": RandomForestClassifier(random_state=42),
+        "Support Vector Machine": SVC(probability=True, random_state=42),
+        "Logistic Regression": LogisticRegression(random_state=42)
+    }
+    return models
+
+# Step 3: Train and Evaluate Models
+def evaluate_models(models, X_train, X_test, y_train, y_test):
+    """Trains and evaluates models using appropriate metrics."""
+    evaluation_results = {}
+    
+    for model_name, model in models.items():
+        # Train the model
+        model.fit(X_train, y_train)
+        
+        # Make predictions
+        y_pred = model.predict(X_test)
+        y_pred_prob = model.predict_proba(X_test)[:, 1] if hasattr(model, "predict_proba") else None
+        
+        # Compute evaluation metrics
+        metrics = {
+            "Accuracy": accuracy_score(y_test, y_pred),
+            "Precision": precision_score(y_test, y_pred, average="weighted"),
+            "Recall": recall_score(y_test, y_pred, average="weighted"),
+            "F1 Score": f1_score(y_test, y_pred, average="weighted"),
+        }
+        if y_pred_prob is not None:
+            metrics["ROC AUC"] = roc_auc_score(y_test, y_pred_prob)
+        
+        evaluation_results[model_name] = metrics
+    
+    return evaluation_results
+
+# Step 4: Display Results
+def display_results(results):
+    """Displays evaluation results in a readable format."""
+    print("Model Evaluation Results:")
+    for model_name, metrics in results.items():
+        print(f"\n{model_name}:")
+        for metric, value in metrics.items():
+            print(f"  {metric}: {value:.4f}")
+
+# Step 5: Workflow Execution
+def main(filepath):
+    """Main workflow for model evaluation."""
+    X_train, X_test, y_train, y_test = load_and_split_data(filepath)
+    models = define_models()
+    results = evaluate_models(models, X_train, X_test, y_train, y_test)
+    display_results(results)
+
+# Usage Example
+file_path = 'path/to/your/data.csv'
+main(file_path)
